@@ -54,13 +54,14 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
         let dim = light.dim.unwrap_or(0);
         
         // Create a span for the checkbox and text
-        let text = Span::raw(format!("{} Light #{} ", checkbox, i + 1));
+        let checkbox = Span::raw(checkbox);
+        let name = Span::raw(format!(" Light #{}", i + 1));
         
         // Create a span for the color preview
         // We use a block character and set its fg/bg
         let preview = Span::styled("   ", Style::default().bg(color));
         
-        let content = Line::from(vec![text, preview]);
+        let content = Line::from(vec![checkbox, preview, name]);
 
         let style = if app.focus == Focus::LightList && app.list_cursor == i {
             Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)

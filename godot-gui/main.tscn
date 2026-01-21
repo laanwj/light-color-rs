@@ -1,0 +1,146 @@
+[gd_scene load_steps=11 format=3 uid="uid://cx06ubgqvgudv"]
+
+[ext_resource type="Script" path="res://LightControl.gd" id="1_0vclu"]
+[ext_resource type="Script" path="res://main.gd" id="1_2l0hh"]
+[ext_resource type="Script" path="res://ValueSlider.gd" id="2_toidj"]
+[ext_resource type="Script" path="res://network_connection.gd" id="4_63s6c"]
+[ext_resource type="Gradient" uid="uid://t5r75gkdetr7" path="res://ct_gradient.tres" id="4_mvepp"]
+
+[sub_resource type="Gradient" id="Gradient_jrdfi"]
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_xgt21"]
+gradient = SubResource("Gradient_jrdfi")
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_six0l"]
+gradient = ExtResource("4_mvepp")
+
+[sub_resource type="Gradient" id="Gradient_ac2jt"]
+colors = PackedColorArray(1, 0.5, 1, 1, 0.5, 1, 0.5, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_wkn3p"]
+gradient = SubResource("Gradient_ac2jt")
+
+[node name="Control" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_2l0hh")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="HBoxContainer"]
+layout_mode = 2
+columns = 3
+
+[node name="CheckBox" type="CheckBox" parent="HBoxContainer/GridContainer"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="HBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(40, 20)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="HBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "A"
+
+[node name="LightControl" type="TabContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_0vclu")
+
+[node name="CCT" type="MarginContainer" parent="HBoxContainer/LightControl"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LightControl/CCT"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+text = "Dim"
+
+[node name="Dim" type="HBoxContainer" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_toidj")
+texture = SubResource("GradientTexture1D_xgt21")
+
+[node name="Slider" type="HSlider" parent="HBoxContainer/LightControl/CCT/VBoxContainer/Dim"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Value" type="SpinBox" parent="HBoxContainer/LightControl/CCT/VBoxContainer/Dim"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+text = "Color Temperature"
+
+[node name="CT" type="HBoxContainer" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_toidj")
+min_value = 2700.0
+max_value = 7500.0
+texture = SubResource("GradientTexture1D_six0l")
+
+[node name="Slider" type="HSlider" parent="HBoxContainer/LightControl/CCT/VBoxContainer/CT"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Value" type="SpinBox" parent="HBoxContainer/LightControl/CCT/VBoxContainer/CT"]
+layout_mode = 2
+min_value = 2700.0
+max_value = 7500.0
+value = 2700.0
+
+[node name="Label3" type="Label" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+text = "Green/Magenta"
+
+[node name="GM" type="HBoxContainer" parent="HBoxContainer/LightControl/CCT/VBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_toidj")
+min_value = -100.0
+texture = SubResource("GradientTexture1D_wkn3p")
+
+[node name="Slider" type="HSlider" parent="HBoxContainer/LightControl/CCT/VBoxContainer/GM"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Value" type="SpinBox" parent="HBoxContainer/LightControl/CCT/VBoxContainer/GM"]
+layout_mode = 2
+
+[node name="HSI" type="MarginContainer" parent="HBoxContainer/LightControl"]
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LightControl/HSI"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="HBoxContainer/LightControl/HSI/VBoxContainer"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="HSIPicker" type="ColorPicker" parent="HBoxContainer/LightControl/HSI/VBoxContainer"]
+layout_mode = 2
+edit_alpha = false
+color_mode = 1
+deferred_mode = true
+picker_shape = 2
+sampler_visible = false
+color_modes_visible = false
+presets_visible = false
+
+[node name="NetworkConnection" type="Node" parent="."]
+script = ExtResource("4_63s6c")

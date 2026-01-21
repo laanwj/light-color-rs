@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "asynctcp",
+    "light-protocol",
+    "light-tui",
+]
+resolver = "2"

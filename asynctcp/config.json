@@ -1,0 +1,13 @@
+{
+    "network": {
+        "bind_addr": "0.0.0.0:4983"
+    },
+    "hardware": {
+        "device": "/dev/spidev0.0",
+        "nrf24_ce_gpio": 25
+    },
+    "lights": [
+        { "address": 1 },
+        { "address": 2 }
+    ]
+}

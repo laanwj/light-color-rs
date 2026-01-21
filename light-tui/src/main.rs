@@ -117,16 +117,21 @@ where <B as ratatui::backend::Backend>::Error: Send + Sync + 'static
     // Spawn blocking task for input
     tokio::task::spawn_blocking(move || {
         loop {
-            // Poll for event to allow cancellation? 
-            // crossterm read blocks. 
-            // We can treat it as valid.
-            match crossterm_event::read() {
-                Ok(event) => {
-                    if tx_event.blocking_send(event).is_err() {
-                        break;
+            // Poll for event to allow cancellation
+            if crossterm_event::poll(Duration::from_millis(100)).unwrap_or(false) {
+                match crossterm_event::read() {
+                    Ok(event) => {
+                        if tx_event.blocking_send(event).is_err() {
+                            break;
+                        }
                     }
+                    Err(_) => break,
                 }
-                Err(_) => break,
+            } else {
+                // Check if channel is closed (receiver dropped)
+                if tx_event.is_closed() {
+                    break;
+                }
             }
         }
     });

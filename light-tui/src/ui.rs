@@ -114,9 +114,9 @@ fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
         .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Length(3)].as_ref())
         .split(area);
         
-    draw_slider(f, app, chunks[0], "Dimmer (0-100)", app.dim as u16, 0, 100, ControlTarget::Dim);
-    draw_slider(f, app, chunks[1], "Color Temp (2700-7500K)", app.ct, 2700, 7500, ControlTarget::CT);
-    draw_slider(f, app, chunks[2], "Green/Magenta (-100-100)", (app.gm as i16) as u16, -100, 100, ControlTarget::GM);
+    draw_slider(f, app, chunks[0], "Dimmer (0-100)", app.dim as i16, 0, 100, ControlTarget::Dim);
+    draw_slider(f, app, chunks[1], "Color Temp (2700-7500K)", app.ct as i16, 2700, 7500, ControlTarget::CT);
+    draw_slider(f, app, chunks[2], "Green/Magenta (-100-100)", app.gm as i16, -100, 100, ControlTarget::GM);
 }
 
 fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
@@ -125,12 +125,12 @@ fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
         .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Length(3)].as_ref())
         .split(area);
 
-    draw_slider(f, app, chunks[0], "Hue (0-360)", app.hue, 0, 360, ControlTarget::Hue);
-    draw_slider(f, app, chunks[1], "Saturation (0-100)", app.sat as u16, 0, 100, ControlTarget::Sat);
-    draw_slider(f, app, chunks[2], "Intensity (0-100)", app.dim as u16, 0, 100, ControlTarget::Int);
+    draw_slider(f, app, chunks[0], "Hue (0-360)", app.hue as i16, 0, 360, ControlTarget::Hue);
+    draw_slider(f, app, chunks[1], "Saturation (0-100)", app.sat as i16, 0, 100, ControlTarget::Sat);
+    draw_slider(f, app, chunks[2], "Intensity (0-100)", app.dim as i16, 0, 100, ControlTarget::Int);
 }
 
-fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: u16, min: i16, max: u16, target: ControlTarget) {
+fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, min: i16, max: i16, target: ControlTarget) {
     let is_focused = if let Focus::Control(t) = app.focus { t == target } else { false };
     
     let border_style = if is_focused {
@@ -150,7 +150,7 @@ fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: u16, mi
     
     // Normalize value for gauge (0.0 to 1.0)
     let range = max as f64 - min as f64;
-    let normalized = if range == 0.0 { 0.0 } else { ((value as i16 - min) as f64 / range).clamp(0.0, 1.0) };
+    let normalized = if range == 0.0 { 0.0 } else { ((value - min) as f64 / range).clamp(0.0, 1.0) };
     
     let gauge = Gauge::default()
         .block(block)

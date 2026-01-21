@@ -111,7 +111,7 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
 fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Length(3)].as_ref())
+        .constraints([Constraint::Length(4), Constraint::Length(4), Constraint::Length(4)].as_ref())
         .split(area);
         
     draw_slider(f, app, chunks[0], "Dimmer (0-100)", app.dim as i16, 0, 100, ControlTarget::Dim);
@@ -122,7 +122,7 @@ fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
 fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Length(3)].as_ref())
+        .constraints([Constraint::Length(4), Constraint::Length(4), Constraint::Length(4)].as_ref())
         .split(area);
 
     draw_slider(f, app, chunks[0], "Hue (0-360)", app.hue as i16, 0, 360, ControlTarget::Hue);
@@ -157,5 +157,61 @@ fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, mi
         .gauge_style(Style::default().fg(Color::Cyan))
         .ratio(normalized);
         
-    f.render_widget(gauge, area);
+    // Render the gauge in the bottom 3 rows
+    let gauge_area = Rect {
+        x: area.x,
+        y: area.y + 1,
+        height: 3,
+        width: area.width,
+    };
+    f.render_widget(gauge, gauge_area);
+
+    // Render the gradient ribbon on top
+    // Only for hue, CT, GM, Diff? For now for all if applicable
+    let ribbon_area = Rect {
+        x: area.x + 1, // borders
+        y: area.y + 1,
+        width: area.width.saturating_sub(2),
+        height: 1,
+    };
+    render_gradient_ribbon(f, ribbon_area, target, min, max);
+}
+
+fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min: i16, max: i16) {
+    if area.width < 1 { return; }
+    
+    let mut spans = Vec::new();
+    for x in 0..area.width {
+        // Map x to value
+        let pct = x as f32 / area.width as f32;
+        let value = (min as f32 + (max as f32 - min as f32) * pct) as i32;
+
+        let color = match target {
+            ControlTarget::Hue => {
+                let (r, g, b) = color::hsi_to_rgb(value as u16, 100, 100);
+                Color::Rgb(r, g, b)
+            }
+            ControlTarget::CT => {
+                let (r, g, b) = color::kelvin_to_rgb(value as u16);
+                Color::Rgb(r, g, b)
+            }
+            ControlTarget::GM => {
+                let (r, g, b) = color::apply_gm((255, 255, 255), value as i16);
+                Color::Rgb(r, g, b)
+            }
+            ControlTarget::Sat => {
+                 let (r, g, b) = color::hsi_to_rgb(0, value as u16, 50); // Show saturation effect on red?
+                 Color::Rgb(r, g, b)
+            }
+             ControlTarget::Int | ControlTarget::Dim => {
+                 let v = (value as f32 / 100.0 * 255.0) as u8;
+                 Color::Rgb(v, v, v)
+             }
+        };
+        
+        spans.push(Span::styled(" ", Style::default().bg(color)));
+    }
+    
+    let line = Line::from(spans);
+    f.render_widget(Paragraph::new(line), area);
 }

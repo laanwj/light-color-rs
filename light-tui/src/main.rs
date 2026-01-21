@@ -3,7 +3,8 @@ use ratatui::{
     backend::CrosstermBackend,
     Terminal,
 };
-use crossterm::event::{self as crossterm_event, Event, KeyCode};
+use crossterm::event::{self as crossterm_event, Event, KeyCode, EventStream};
+use futures::StreamExt;
 use anyhow::Result;
 
 mod app;
@@ -111,36 +112,13 @@ where <B as ratatui::backend::Backend>::Error: Send + Sync + 'static
 {
     let mut tick_rate = interval(Duration::from_millis(100));
     
-    // Channel for receiving input events
-    let (tx_event, mut rx_event) = mpsc::channel(100);
-    
-    // Spawn blocking task for input
-    tokio::task::spawn_blocking(move || {
-        loop {
-            // Poll for event to allow cancellation
-            if crossterm_event::poll(Duration::from_millis(100)).unwrap_or(false) {
-                match crossterm_event::read() {
-                    Ok(event) => {
-                        if tx_event.blocking_send(event).is_err() {
-                            break;
-                        }
-                    }
-                    Err(_) => break,
-                }
-            } else {
-                // Check if channel is closed (receiver dropped)
-                if tx_event.is_closed() {
-                    break;
-                }
-            }
-        }
-    });
-    
+    let mut event_stream = EventStream::new();
+
     loop {
         terminal.draw(|f| ui::draw(f, app))?;
 
         tokio::select! {
-             _ = tick_rate.tick() => {
+            _ = tick_rate.tick() => {
                  // Regular tick
             }
             Some(states) = rx_update.recv() => {
@@ -150,7 +128,7 @@ where <B as ratatui::backend::Backend>::Error: Send + Sync + 'static
                     app.lights = states;
                 }
             }
-            Some(event) = rx_event.recv() => {
+            Some(Ok(event)) = event_stream.next() => {
                  if let Event::Key(key) = event {
                     if key.kind == crossterm_event::KeyEventKind::Press {
                         match key.code {

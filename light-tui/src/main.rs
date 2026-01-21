@@ -1,15 +1,10 @@
-use std::io;
-use ratatui::{
-    backend::CrosstermBackend,
-    Terminal,
-};
+use ratatui::Terminal;
 use crossterm::event::{self as crossterm_event, Event, KeyCode, EventStream};
 use futures::StreamExt;
 use anyhow::Result;
 
 mod app;
 mod ui;
-mod event; // This is my local event module, maybe rename or remove if unused? Keep for now.
 mod tui;
 mod color;
 

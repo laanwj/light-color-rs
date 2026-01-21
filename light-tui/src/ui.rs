@@ -51,7 +51,6 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
         let checkbox = if is_selected { "[x] " } else { "[ ] " };
         
         let color = color::compute_preview(light);
-        let dim = light.dim.unwrap_or(0);
         
         // Create a span for the checkbox and text
         let checkbox = Span::raw(checkbox);

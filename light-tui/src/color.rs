@@ -58,12 +58,6 @@ pub fn apply_gm(rgb: (u8, u8, u8), gm: i16) -> (u8, u8, u8) {
 pub fn hsi_to_rgb(h: u16, s: u16, i: u16) -> (u8, u8, u8) {
     let h_float = h as f32;
     let s_float = s as f32 / 100.0;
-    let i_float = i as f32 / 100.0; // Intensity is brightness? Or "Value"? 
-    // Reference uses Color.from_hsv(hue / 360.0, sat / 100.0, 1.0) * pow(dim/100, 0.25)
-    // So distinct split.
-    // Wait, reference:
-    // color = Color.from_hsv(hue / 360.0, sat / 100.0, 1.0)
-    // color *= pow(dim / 100.0, 0.25)
     
     let c = s_float; // Value is 1.0 in from_hsv call
     let x = c * (1.0 - ((h_float / 60.0) % 2.0 - 1.0).abs());

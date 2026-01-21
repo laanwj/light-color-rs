@@ -23,7 +23,7 @@ use std::net::SocketAddr;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     /// Address of the light server
-    #[arg(short, long, default_value = "127.0.0.1:8080")]
+    #[arg(short, long, default_value = "127.0.0.1:4983")]
     address: SocketAddr,
 }
 

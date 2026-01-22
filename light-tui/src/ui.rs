@@ -18,7 +18,7 @@ pub fn draw(f: &mut Frame, app: &App) {
 
     // Header
     let title =
-        Paragraph::new("Light Control TUI - 'q' to quit, 'Tab' mode, 'Space' select, 'Enter' edit")
+        Paragraph::new("Light Control TUI - 'q' to quit, arrows to navigate, 'Tab' mode, 'Enter' edit")
             .style(app.theme.title_style)
             .alignment(Alignment::Center)
             .block(

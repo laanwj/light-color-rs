@@ -1,17 +1,10 @@
+use crate::app::App;
 use anyhow::Result;
+use clap::Parser;
 use crossterm::event::{self as crossterm_event, Event, EventStream, KeyCode};
 use futures::StreamExt;
-use ratatui::Terminal;
-
-mod app;
-mod color;
-mod tui;
-mod ui;
-
-use crate::app::App;
-
-use clap::Parser;
 use light_protocol::{Command, Response, State};
+use ratatui::Terminal;
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -19,6 +12,11 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::interval;
+
+mod app;
+mod color;
+mod tui;
+mod ui;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

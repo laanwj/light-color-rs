@@ -1,6 +1,6 @@
 # Nanlite Light color
 
-A TUI and Godot GUI for setting photography light colors and brightness, from a Raspberry Pi.
+A TUI and Godot GUI for setting photography light colors and brightness, wirelessly from a Raspberry Pi.
 
 Currently supported: Nanlite Radio v1 protocol. This is used by at least the following devices:
 
@@ -20,20 +20,63 @@ Currently supported: Nanlite Radio v1 protocol. This is used by at least the fol
 
 ## Hardware setup
 
-The server component communicates with a NRF24L01+ module over SPI.
+The server component communicates with a NRF24L01+ radio module over SPI.
 
 The wiring that was used during development is:
 
+```
+rPi: Pinout from top of board, with raspi logo at top, connector will be at top right
+("Pinout depicts pin 1 in the top left corner. Pin 1 is the only pin with a square
+solder pad, which may only be visible from the underside of your Pi.")
+
+nRF24: Module pinout from top of board, with antenna at the right.
+(so pin header at bottom of board is swapped compared to this)
+
+
+    ┌────────────────────────────────────────┐
+    │                                        │
+    │ ┌────────────────────────────────────┐ │
+    │ │                                    │ │
+    │ │     rPi                            │ │
+    │ │ ╔════╦════╗                        │ │
+    │ │ ║ 1  ║ 2  ║                        │ │
+    │ │ ║ ■  ║ ●  ║                        │ │
+    │ │ ╠════╬════╣                        │ │
+    │ │ ┊    ┊    ┊              nRF24     │ │
+    │ │ ╠════╬════╣           ╔════╦════╗  │ │
+    │ │ ║ 17 ║ 18 ║           ║ 1  ║ 2  ║  │ │
+    │ └───●  ║ ●  ║     ┌───────■  ║ ●─────┘ │
+    │   ╠════╬════╣     │     ╠════╬════╣    │
+    │   ║ 19 ║ 20 ║     │     ║ 3  ║ 4  ║    │
+    └─────●  ║ ●────────┘ ┌─────●  ║ ●─────┐ │
+        ╠════╬════╣       │   ╠════╬════╣  │ │
+        ║ 21 ║ 22 ║       │   ║ 5  ║ 6  ║  │ │
+    ┌─────●  ║ ●──────────┘ ┌───●  ║ ●─────│─┘
+    │   ╠════╬════╣         │ ╠════╬════╣  │
+    │   ║ 23 ║ 24 ║         │ ║ 7  ║ 8  ║  │
+    │ ┌───●  ║ ●────────┐   │ ║ ●  ║ ●  ║  │
+    │ │ ╠════╬════╣     │   │ ╚═│══╩════╝  │
+    │ │ ┊    ┊    ┊     │   │   │          │
+    │ │ ╠════╬════╣     │   │   │          │
+    │ │ ║ 39 ║ 40 ║     └──────────────────┘
+    │ │ ║ ●  ║ ●  ║         │   │
+    │ │ ╚════╩════╝         │   │
+    │ │                     │   │
+    │ └─────────────────────┘   │
+    │                           │
+    └───────────────────────────┘
+```
+
 | nRF24 pin    | rPI pin      |
 | :----------- | :----------- |
-| 1 GND        | 20 Ground    |
-| 2 VCC        | 17 3v3 power |
-| 3 CE         | 22 GPIO 25   |
-| 4 SPI CSN    | 24 GPIO 8    |
-| 5 SPI SCK    | 23 GPIO 11   |
-| 6 SPI MOSI   | 19 GPIO 10   |
-| 7 SPI MISO   | 21 GPIO 9    |
-| 8 IRQ        | N/A          |
+| `1` GND        | `20` Ground    |
+| `2` VCC        | `17` 3v3 power |
+| `3` CE         | `22` GPIO 25   |
+| `4` SPI CSN    | `24` GPIO 8    |
+| `5` SPI SCK    | `23` GPIO 11   |
+| `6` SPI MOSI   | `19` GPIO 10   |
+| `7` SPI MISO   | `21` GPIO 9    |
+| `8` IRQ        | N/A          |
 
 The CE pin can be changed, if `nrf24_ce_gpio` in `config.json` is also updated. The other pins are wired internally to the rPI's SPI0 and should not be changed. The IRQ pin doesn't need to be connected as it is not used by this implementation.
 
@@ -91,4 +134,4 @@ It is currently hardcoded to connect to `127.0.0.1:4983`. This can be changed as
 ## Credits
 
 - Mara van der Laan: Reverse engineering of Nanlite radio protocol, implementation
-- Michal Hošna: rust nRF24 example, wiring suggestion
+- Michal Hošna: rust nRF24 example, compact wiring suggestion

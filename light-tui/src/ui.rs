@@ -4,7 +4,7 @@ use light_protocol::ModeType;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Gauge, List, ListItem, Paragraph, Tabs},
 };
@@ -17,12 +17,9 @@ pub fn draw(f: &mut Frame, app: &App) {
         .split(f.area());
 
     // Header
-    let title_style = Style::default()
-        .fg(Color::Cyan)
-        .add_modifier(Modifier::BOLD);
     let title =
         Paragraph::new("Light Control TUI - 'q' to quit, 'Tab' mode, 'Space' select, 'Enter' edit")
-            .style(title_style)
+            .style(app.theme.title_style)
             .alignment(Alignment::Center)
             .block(
                 Block::default()
@@ -63,11 +60,9 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
         let content = Line::from(vec![checkbox, preview, name]);
 
         let style = if app.focus == Focus::LightList && app.list_cursor == i {
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD)
+            app.theme.focus_item
         } else {
-            Style::default()
+            app.theme.normal_item
         };
         items.push(ListItem::new(content).style(style));
     }
@@ -76,9 +71,9 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
         .title("Lights")
         .borders(Borders::ALL)
         .border_style(if app.focus == Focus::LightList {
-            Style::default().fg(Color::Yellow)
+            app.theme.focus_control
         } else {
-            Style::default()
+            app.theme.normal_control
         });
 
     let list = List::new(items).block(block);
@@ -100,7 +95,7 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Mode"))
         .select(mode_index)
-        .highlight_style(Style::default().fg(Color::Green))
+        .highlight_style(app.theme.focus_item)
         .divider("|");
 
     f.render_widget(tabs, chunks[0]);
@@ -222,12 +217,12 @@ fn draw_slider(
 
     let border_style = if is_focused {
         if app.input_mode == InputMode::Editing {
-            Style::default().fg(Color::Red)
+            app.theme.edit_control
         } else {
-            Style::default().fg(Color::Yellow)
+            app.theme.focus_control
         }
     } else {
-        Style::default()
+        app.theme.normal_control
     };
 
     let block = Block::default()
@@ -245,7 +240,7 @@ fn draw_slider(
 
     let gauge = Gauge::default()
         .block(block)
-        .gauge_style(Style::default().fg(Color::Cyan))
+        .gauge_style(app.theme.gauge_style)
         .ratio(normalized);
 
     // Render the gauge in the bottom 3 rows

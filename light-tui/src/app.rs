@@ -1,6 +1,17 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use light_protocol::{ModeType, State};
+use ratatui::style::{Color, Modifier, Style};
 use std::collections::HashSet;
+
+pub struct Theme {
+    pub normal_control: Style,
+    pub focus_control: Style,
+    pub edit_control: Style,
+    pub normal_item: Style,
+    pub focus_item: Style,
+    pub title_style: Style,
+    pub gauge_style: Style,
+}
 
 pub struct App {
     pub should_quit: bool,
@@ -11,6 +22,7 @@ pub struct App {
     pub input_mode: InputMode,
 
     // UI State
+    pub theme: Theme,
     pub focus: Focus,
 
     // CCT Controls
@@ -58,6 +70,19 @@ impl App {
             current_mode: ModeType::CCT,
             input_mode: InputMode::Navigation,
             focus: Focus::LightList,
+            theme: Theme {
+                normal_control: Style::default(),
+                focus_control: Style::default().fg(Color::Yellow),
+                edit_control: Style::default().fg(Color::Red),
+                normal_item: Style::default(),
+                focus_item: Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+                title_style: Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+                gauge_style: Style::default().fg(Color::Cyan),
+            },
 
             dim: 0,
             ct: 2700,
@@ -65,7 +90,6 @@ impl App {
 
             hue: 0,
             sat: 0,
-            // int: 0,
         }
     }
 

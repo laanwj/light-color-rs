@@ -10,12 +10,15 @@ enum State {
 	CONNECTED = 2,
 }
 
+@export var host := "127.0.0.1"
+@export var port := DEFAULT_PORT
+
 var reconnect_timeout := 1.0
 var state: State = State.IDLE
 var conn: StreamPeerTCP
 var linebuf := PackedByteArray()
 
-
+	
 func set_light(idx: int, lstate: LCTypes.LightState) -> void:
 	if state == State.CONNECTED:
 		var d := {
@@ -39,7 +42,7 @@ func _try_connect() -> void:
 	state = State.CONNECTING
 	linebuf.clear()
 	conn = StreamPeerTCP.new()
-	var status = conn.connect_to_host("127.0.0.1", DEFAULT_PORT)
+	var status = conn.connect_to_host(host, port)
 	if status != OK:
 		_failed_connect()
 

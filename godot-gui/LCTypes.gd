@@ -1,4 +1,4 @@
-/xtends Object # do not instantiate
+extends Object # do not instantiate
 class_name LCTypes
 
 enum LightMode {

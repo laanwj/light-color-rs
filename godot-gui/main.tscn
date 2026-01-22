@@ -52,10 +52,12 @@ text = "A"
 [node name="LightControl" type="TabContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+current_tab = 0
 script = ExtResource("1_0vclu")
 
 [node name="CCT" type="MarginContainer" parent="HBoxContainer/LightControl"]
 layout_mode = 2
+metadata/_tab_index = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LightControl/CCT"]
 layout_mode = 2
@@ -124,6 +126,7 @@ layout_mode = 2
 [node name="HSI" type="MarginContainer" parent="HBoxContainer/LightControl"]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LightControl/HSI"]
 layout_mode = 2
@@ -144,3 +147,4 @@ presets_visible = false
 
 [node name="NetworkConnection" type="Node" parent="."]
 script = ExtResource("4_63s6c")
+host = "127.0.0.1"

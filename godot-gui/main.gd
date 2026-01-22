@@ -63,6 +63,14 @@ func _recv_lights_state(lights_state_in: Array):
 
 
 func _ready() -> void:
+	# Disable joystick input for GUI
+	var actions := InputMap.get_actions()
+	for action in actions:
+		var inputs := InputMap.action_get_events(action)
+		for input in inputs:
+			if input is InputEventJoypadButton or input is InputEventJoypadMotion:
+				# -1 seems to be "all devices", 99 is unreasonable
+				input.device = 99
 	# Handle hiDPI screens
 	var dpi: int = DisplayServer.screen_get_dpi()
 	print("screen max scale: ", DisplayServer.screen_get_max_scale())

@@ -72,8 +72,8 @@ impl App {
             focus: Focus::LightList,
             theme: Theme {
                 normal_control: Style::default(),
-                focus_control: Style::default().fg(Color::Yellow),
-                edit_control: Style::default().fg(Color::Red),
+                focus_control: Style::default().fg(Color::Cyan),
+                edit_control: Style::default().fg(Color::LightCyan),
                 normal_item: Style::default(),
                 focus_item: Style::default()
                     .fg(Color::Yellow)

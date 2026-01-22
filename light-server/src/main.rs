@@ -1,16 +1,16 @@
 use std::error::Error;
 use std::fs;
 use std::sync::{Arc, Mutex};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
-use tokio::io::{BufReader, AsyncBufReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 
-use light_protocol::{ModeType, ResponseType, State, Command, Response};
+use light_protocol::{Command, ModeType, Response, ResponseType, State};
 
 mod configuration;
 mod nanlite;
 
-/** Update state record from another state record. 
+/** Update state record from another state record.
  * Data items that are the unset, will stay the same.
  */
 fn update_state(dest_state: &mut State, src_state: &State) {
@@ -79,7 +79,7 @@ fn update_light(state: &State) -> Option<LightCommand> {
                 None
             }
         }
-        None => { None }
+        None => None,
     }
 }
 
@@ -92,7 +92,10 @@ enum LightCommand {
 
 /** Task that receives light commands, and dispatches them to the radio.
  */
-async fn lights_task(config: &configuration::Hardware, mut rx: mpsc::Receiver<(u16, LightCommand)>) {
+async fn lights_task(
+    config: &configuration::Hardware,
+    mut rx: mpsc::Receiver<(u16, LightCommand)>,
+) {
     println!("Light thread running");
     let mut rf24 = nanlite::rf24_init(config.device.clone(), config.nrf24_ce_gpio).unwrap();
     while let Some((idx, cmd)) = rx.recv().await {
@@ -105,18 +108,18 @@ async fn lights_task(config: &configuration::Hardware, mut rx: mpsc::Receiver<(u
                 nanlite::set_hue_sat_intensity(&mut rf24, idx, hue, sat, intensity).unwrap();
             }
         }
-    };
+    }
 }
 
 /** Task that handles an incoming connection.
  */
 async fn connection_task(
-        light_config: &Vec<configuration::Light>,
-        light_states: Arc<Mutex<Vec<State>>>, 
-        tx: mpsc::Sender<(u16, LightCommand)>,
-        mut stream: tokio::net::TcpStream,
-        peer: std::net::SocketAddr,
-    ) {
+    light_config: &Vec<configuration::Light>,
+    light_states: Arc<Mutex<Vec<State>>>,
+    tx: mpsc::Sender<(u16, LightCommand)>,
+    mut stream: tokio::net::TcpStream,
+    peer: std::net::SocketAddr,
+) {
     println!("Thread {} starting", peer.to_string());
     let (reader, mut writer) = stream.split();
     let mut buf_reader = BufReader::new(reader);
@@ -151,7 +154,9 @@ async fn connection_task(
                 // Send command to light thread.
                 println!("Out: {:?}", update_command);
                 if let Some(light_cmd) = update_command {
-                    tx.send((light_config[command.idx as usize].address, light_cmd)).await.unwrap();
+                    tx.send((light_config[command.idx as usize].address, light_cmd))
+                        .await
+                        .unwrap();
                 }
 
                 // TODO: error handling for invalid input
@@ -195,14 +200,24 @@ async fn main() {
     let socket = TcpListener::bind(&addr).await.unwrap();
 
     println!("Listening on {}", addr);
-    
+
     // Initial light states (unknown).
     let num_lights = config.lights.len();
-    let initial_states: Vec<State> = vec![State {mode: None, dim: None, ct: None, gm: None, hue: None, sat: None}; num_lights];
+    let initial_states: Vec<State> = vec![
+        State {
+            mode: None,
+            dim: None,
+            ct: None,
+            gm: None,
+            hue: None,
+            sat: None
+        };
+        num_lights
+    ];
     let light_states = Arc::new(Mutex::new(initial_states));
 
     // Make channel for communicating with lights thread.
-    let (tx, rx) = mpsc::channel::<(u16, LightCommand)>(32); 
+    let (tx, rx) = mpsc::channel::<(u16, LightCommand)>(32);
 
     // Spawn lights thread.
     let hardware_config = config.hardware.clone();

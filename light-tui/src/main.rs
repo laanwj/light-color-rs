@@ -1,23 +1,23 @@
-use ratatui::Terminal;
-use crossterm::event::{self as crossterm_event, Event, KeyCode, EventStream};
-use futures::StreamExt;
 use anyhow::Result;
+use crossterm::event::{self as crossterm_event, Event, EventStream, KeyCode};
+use futures::StreamExt;
+use ratatui::Terminal;
 
 mod app;
-mod ui;
-mod tui;
 mod color;
+mod tui;
+mod ui;
 
 use crate::app::App;
 
-use std::time::Duration;
-use tokio::net::TcpStream;
-use tokio::time::interval;
-use tokio::sync::mpsc;
-use tokio::io::{AsyncWriteExt, BufReader, AsyncBufReadExt};
-use light_protocol::{Command, Response, State};
 use clap::Parser;
+use light_protocol::{Command, Response, State};
 use std::net::SocketAddr;
+use std::time::Duration;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpStream;
+use tokio::sync::mpsc;
+use tokio::time::interval;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
                     continue;
                 }
             };
-            
+
             let (reader, mut writer) = stream.split();
             let mut buf_reader = BufReader::new(reader);
             let mut line = String::new();
@@ -98,15 +98,16 @@ async fn main() -> Result<()> {
 }
 
 async fn run_app<B: ratatui::backend::Backend>(
-    terminal: &mut Terminal<B>, 
+    terminal: &mut Terminal<B>,
     app: &mut App,
     tx_cmd: mpsc::Sender<Command>,
-    rx_update: &mut mpsc::Receiver<Vec<State>>
-) -> Result<()> 
-where <B as ratatui::backend::Backend>::Error: Send + Sync + 'static
+    rx_update: &mut mpsc::Receiver<Vec<State>>,
+) -> Result<()>
+where
+    <B as ratatui::backend::Backend>::Error: Send + Sync + 'static,
 {
     let mut tick_rate = interval(Duration::from_millis(100));
-    
+
     let mut event_stream = EventStream::new();
 
     loop {
@@ -131,7 +132,7 @@ where <B as ratatui::backend::Backend>::Error: Send + Sync + 'static
                             _ => {
                                 let old_states = app.lights.clone();
                                 app.handle_key_event(key);
-                                
+
                                 for idx in &app.selected_indices {
                                     if *idx < app.lights.len() && *idx < old_states.len() {
                                         let new_state = &app.lights[*idx];

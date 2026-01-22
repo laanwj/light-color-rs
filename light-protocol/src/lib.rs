@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /* Protocol:
  * in:
  *   {"idx": n, "state": {"mode": ..., "dim": ..., "ct": ..., "gm": ..., "hue": ..., "sat": ... }}
- * out: 
+ * out:
  *   {"response":"err", "error":"..."}
  *   {"response":"ok"}
  *   {"response":"state", "state": {...}}
@@ -26,7 +26,6 @@ pub enum ResponseType {
     #[serde(rename = "state")]
     State,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct State {

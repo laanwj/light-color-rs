@@ -1,29 +1,17 @@
 use std::path::Path;
 
 use linux_embedded_hal::{
-    CdevPin,
-    Delay,
-    SpidevDevice,
+    CdevPin, Delay, SpidevDevice,
     gpio_cdev::{Chip, LineRequestFlags},
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
 };
 use rf24::{
-    CrcLength,
-    DataRate,
-    PaLevel,
+    CrcLength, DataRate, PaLevel,
     radio::{
         RF24,
         prelude::{
-            EsbAutoAck,
-            EsbChannel,
-            EsbCrcLength,
-            EsbDataRate,
-            EsbInit,
-            EsbPaLevel,
-            EsbPayloadLength,
-            EsbPipe,
-            EsbRadio,
-            RadioErrorType,
+            EsbAutoAck, EsbChannel, EsbCrcLength, EsbDataRate, EsbInit, EsbPaLevel,
+            EsbPayloadLength, EsbPipe, EsbRadio, RadioErrorType,
         },
     },
 };
@@ -126,7 +114,15 @@ pub fn set_hue_sat_intensity<Radio: EsbRadio>(
     let sat = sat.min(100);
     let intensity = intensity.min(100);
 
-    rf24.send(&[0xf0 | ((hue >> 8) as u8), intensity, (hue & 0xff) as u8, sat], false)?;
+    rf24.send(
+        &[
+            0xf0 | ((hue >> 8) as u8),
+            intensity,
+            (hue & 0xff) as u8,
+            sat,
+        ],
+        false,
+    )?;
 
     Ok(())
 }

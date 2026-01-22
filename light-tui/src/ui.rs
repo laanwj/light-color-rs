@@ -1,34 +1,36 @@
+use crate::app::{App, ControlTarget, Focus, InputMode};
+use crate::color;
+use light_protocol::ModeType;
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect, Alignment},
+    Frame,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs, Gauge, BorderType},
-    Frame,
+    widgets::{Block, BorderType, Borders, Gauge, List, ListItem, Paragraph, Tabs},
 };
-use crate::app::{App, InputMode, Focus, ControlTarget};
-use light_protocol::ModeType;
 
 pub fn draw(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(f.area());
 
     // Header
-    let title_style = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
-    let title = Paragraph::new("Light Control TUI - 'q' to quit, 'Tab' mode, 'Space' select, 'Enter' edit")
-        .style(title_style)
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded));
+    let title_style = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let title =
+        Paragraph::new("Light Control TUI - 'q' to quit, 'Tab' mode, 'Space' select, 'Enter' edit")
+            .style(title_style)
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded),
+            );
     f.render_widget(title, chunks[0]);
-    
+
     // Main area layout
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -42,39 +44,43 @@ pub fn draw(f: &mut Frame, app: &App) {
     draw_controls(f, app, main_chunks[1]);
 }
 
-use crate::color;
-
 fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
     let mut items: Vec<ListItem> = Vec::new();
     for (i, light) in app.lights.iter().enumerate() {
         let is_selected = app.selected_indices.contains(&i);
         let checkbox = if is_selected { "[x] " } else { "[ ] " };
-        
+
         let color = color::compute_preview(light);
-        
+
         // Create a span for the checkbox and text
         let checkbox = Span::raw(checkbox);
         let name = Span::raw(format!(" Light #{}", i + 1));
-        
+
         // Create a span for the color preview
         // We use a block character and set its fg/bg
         let preview = Span::styled("   ", Style::default().bg(color));
-        
+
         let content = Line::from(vec![checkbox, preview, name]);
 
         let style = if app.focus == Focus::LightList && app.list_cursor == i {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
         items.push(ListItem::new(content).style(style));
     }
-    
+
     let block = Block::default()
         .title("Lights")
         .borders(Borders::ALL)
-        .border_style(if app.focus == Focus::LightList { Style::default().fg(Color::Yellow) } else { Style::default() });
-    
+        .border_style(if app.focus == Focus::LightList {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        });
+
     let list = List::new(items).block(block);
     f.render_widget(list, area);
 }
@@ -96,12 +102,12 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
         .select(mode_index)
         .highlight_style(Style::default().fg(Color::Green))
         .divider("|");
-        
+
     f.render_widget(tabs, chunks[0]);
 
     // Control Sliders
     let controls_area = chunks[1];
-    
+
     match app.current_mode {
         ModeType::CCT => draw_cct_controls(f, app, controls_area),
         ModeType::HSI => draw_hsi_controls(f, app, controls_area),
@@ -111,28 +117,109 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
 fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(4), Constraint::Length(4), Constraint::Length(4)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(4),
+                Constraint::Length(4),
+                Constraint::Length(4),
+            ]
+            .as_ref(),
+        )
         .split(area);
-        
-    draw_slider(f, app, chunks[0], "Dimmer (0-100)", app.dim as i16, 0, 100, ControlTarget::Dim);
-    draw_slider(f, app, chunks[1], "Color Temp (2700-7500K)", app.ct as i16, 2700, 7500, ControlTarget::CT);
-    draw_slider(f, app, chunks[2], "Green/Magenta (-100-100)", app.gm as i16, -100, 100, ControlTarget::GM);
+
+    draw_slider(
+        f,
+        app,
+        chunks[0],
+        "Dimmer (0-100)",
+        app.dim as i16,
+        0,
+        100,
+        ControlTarget::Dim,
+    );
+    draw_slider(
+        f,
+        app,
+        chunks[1],
+        "Color Temp (2700-7500K)",
+        app.ct as i16,
+        2700,
+        7500,
+        ControlTarget::CT,
+    );
+    draw_slider(
+        f,
+        app,
+        chunks[2],
+        "Green/Magenta (-100-100)",
+        app.gm as i16,
+        -100,
+        100,
+        ControlTarget::GM,
+    );
 }
 
 fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(4), Constraint::Length(4), Constraint::Length(4)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(4),
+                Constraint::Length(4),
+                Constraint::Length(4),
+            ]
+            .as_ref(),
+        )
         .split(area);
 
-    draw_slider(f, app, chunks[0], "Hue (0-360)", app.hue as i16, 0, 360, ControlTarget::Hue);
-    draw_slider(f, app, chunks[1], "Saturation (0-100)", app.sat as i16, 0, 100, ControlTarget::Sat);
-    draw_slider(f, app, chunks[2], "Intensity (0-100)", app.dim as i16, 0, 100, ControlTarget::Int);
+    draw_slider(
+        f,
+        app,
+        chunks[0],
+        "Hue (0-360)",
+        app.hue as i16,
+        0,
+        360,
+        ControlTarget::Hue,
+    );
+    draw_slider(
+        f,
+        app,
+        chunks[1],
+        "Saturation (0-100)",
+        app.sat as i16,
+        0,
+        100,
+        ControlTarget::Sat,
+    );
+    draw_slider(
+        f,
+        app,
+        chunks[2],
+        "Intensity (0-100)",
+        app.dim as i16,
+        0,
+        100,
+        ControlTarget::Int,
+    );
 }
 
-fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, min: i16, max: i16, target: ControlTarget) {
-    let is_focused = if let Focus::Control(t) = app.focus { t == target } else { false };
-    
+fn draw_slider(
+    f: &mut Frame,
+    app: &App,
+    area: Rect,
+    label: &str,
+    value: i16,
+    min: i16,
+    max: i16,
+    target: ControlTarget,
+) {
+    let is_focused = if let Focus::Control(t) = app.focus {
+        t == target
+    } else {
+        false
+    };
+
     let border_style = if is_focused {
         if app.input_mode == InputMode::Editing {
             Style::default().fg(Color::Red)
@@ -147,16 +234,20 @@ fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, mi
         .title(format!("{}: {}", label, value))
         .borders(Borders::ALL)
         .border_style(border_style);
-    
+
     // Normalize value for gauge (0.0 to 1.0)
     let range = max as f64 - min as f64;
-    let normalized = if range == 0.0 { 0.0 } else { ((value - min) as f64 / range).clamp(0.0, 1.0) };
-    
+    let normalized = if range == 0.0 {
+        0.0
+    } else {
+        ((value - min) as f64 / range).clamp(0.0, 1.0)
+    };
+
     let gauge = Gauge::default()
         .block(block)
         .gauge_style(Style::default().fg(Color::Cyan))
         .ratio(normalized);
-        
+
     // Render the gauge in the bottom 3 rows
     let gauge_area = Rect {
         x: area.x,
@@ -177,8 +268,10 @@ fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, mi
 }
 
 fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min: i16, max: i16) {
-    if area.width < 1 { return; }
-    
+    if area.width < 1 {
+        return;
+    }
+
     let mut spans = Vec::new();
     for x in 0..area.width {
         // Map x to value
@@ -199,18 +292,18 @@ fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min:
                 Color::Rgb(r, g, b)
             }
             ControlTarget::Sat => {
-                 let (r, g, b) = color::hsi_to_rgb(0, value as u16, 50); // Show saturation effect on red?
-                 Color::Rgb(r, g, b)
+                let (r, g, b) = color::hsi_to_rgb(0, value as u16, 50); // Show saturation effect on red?
+                Color::Rgb(r, g, b)
             }
-             ControlTarget::Int | ControlTarget::Dim => {
-                 let v = (value as f32 / 100.0 * 255.0) as u8;
-                 Color::Rgb(v, v, v)
-             }
+            ControlTarget::Int | ControlTarget::Dim => {
+                let v = (value as f32 / 100.0 * 255.0) as u8;
+                Color::Rgb(v, v, v)
+            }
         };
-        
+
         spans.push(Span::styled(" ", Style::default().bg(color)));
     }
-    
+
     let line = Line::from(spans);
     f.render_widget(Paragraph::new(line), area);
 }

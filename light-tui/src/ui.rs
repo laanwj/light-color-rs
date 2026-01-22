@@ -161,16 +161,15 @@ fn draw_slider(f: &mut Frame, app: &App, area: Rect, label: &str, value: i16, mi
     let gauge_area = Rect {
         x: area.x,
         y: area.y + 1,
-        height: 3,
+        height: 4,
         width: area.width,
     };
     f.render_widget(gauge, gauge_area);
 
     // Render the gradient ribbon on top
-    // Only for hue, CT, GM, Diff? For now for all if applicable
     let ribbon_area = Rect {
         x: area.x + 1, // borders
-        y: area.y + 1,
+        y: area.y + 2,
         width: area.width.saturating_sub(2),
         height: 1,
     };

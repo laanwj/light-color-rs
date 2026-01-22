@@ -118,11 +118,7 @@ where
                  // Regular tick
             }
             Some(states) = rx_update.recv() => {
-                if app.lights.len() != states.len() {
-                    app.lights = states;
-                } else {
-                    app.lights = states;
-                }
+                app.lights = states;
             }
             Some(Ok(event)) = event_stream.next() => {
                  if let Event::Key(key) = event {

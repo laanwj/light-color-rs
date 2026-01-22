@@ -12,6 +12,7 @@ use crate::app::App;
 
 use clap::Parser;
 use light_protocol::{Command, Response, State};
+use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -119,6 +120,11 @@ where
             }
             Some(states) = rx_update.recv() => {
                 app.lights = states;
+                if app.first_connect {
+                    app.first_connect = false;
+                    // Select all lights on first succesful connect.
+                    app.selected_indices = HashSet::from_iter(0..app.lights.len());
+                }
             }
             Some(Ok(event)) = event_stream.next() => {
                  if let Event::Key(key) = event {

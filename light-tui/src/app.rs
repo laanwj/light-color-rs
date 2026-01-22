@@ -4,6 +4,7 @@ use std::collections::HashSet;
 
 pub struct App {
     pub should_quit: bool,
+    pub first_connect: bool,
     pub lights: Vec<State>,
     pub selected_indices: HashSet<usize>,
     pub current_mode: ModeType,
@@ -50,6 +51,7 @@ impl App {
     pub fn new() -> App {
         App {
             should_quit: false,
+            first_connect: true,
             lights: vec![],
             selected_indices: HashSet::new(),
             list_cursor: 0,

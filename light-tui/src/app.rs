@@ -14,7 +14,6 @@ pub struct Theme {
 }
 
 pub struct App {
-    pub should_quit: bool,
     pub first_connect: bool,
     pub lights: Vec<State>,
     pub selected_indices: HashSet<usize>,
@@ -62,7 +61,6 @@ pub enum ControlTarget {
 impl App {
     pub fn new() -> App {
         App {
-            should_quit: false,
             first_connect: true,
             lights: vec![],
             selected_indices: HashSet::new(),
@@ -96,7 +94,7 @@ impl App {
     pub fn handle_key_event(&mut self, key: KeyEvent) {
         if self.input_mode == InputMode::Navigation {
             match key.code {
-                KeyCode::Char('q') => self.should_quit = true,
+                // 'q' and CTRL-'c' are handled in src/main.rs
                 KeyCode::Down | KeyCode::Char('j') => self.move_focus(1),
                 KeyCode::Up | KeyCode::Char('k') => self.move_focus(-1),
                 KeyCode::Right | KeyCode::Char('l') => self.switch_focus(true),

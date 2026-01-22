@@ -1,7 +1,7 @@
 use crate::app::App;
 use anyhow::Result;
 use clap::Parser;
-use crossterm::event::{self as crossterm_event, Event, EventStream, KeyCode};
+use crossterm::event::{self as crossterm_event, Event, EventStream, KeyCode, KeyModifiers};
 use futures::StreamExt;
 use light_protocol::{Command, Response, State};
 use ratatui::Terminal;
@@ -129,6 +129,11 @@ where
                     if key.kind == crossterm_event::KeyEventKind::Press {
                         match key.code {
                             KeyCode::Char('q') => return Ok(()),
+                            KeyCode::Char('c') => {
+                                if key.modifiers.contains(KeyModifiers::CONTROL) {
+                                    return Ok(());
+                                }
+                            },
                             _ => {
                                 let old_states = app.lights.clone();
                                 app.handle_key_event(key);

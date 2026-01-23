@@ -16,7 +16,7 @@ pub fn compute_preview(state: &State) -> Color {
         ModeType::HSI => {
             let hue = state.hue.unwrap_or(0);
             let sat = state.sat.unwrap_or(0);
-            let dim = state.dim.unwrap_or(0); // Assuming dim is intensity
+            let dim = state.dim.unwrap_or(0);
 
             let (r, g, b) = hsi_to_rgb(hue, sat, dim);
             (r, g, b)

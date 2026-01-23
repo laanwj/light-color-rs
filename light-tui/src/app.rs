@@ -27,12 +27,12 @@ pub struct App {
     // CCT Controls
     pub dim: u8,
     pub ct: u16,
-    pub gm: i8, // -100 to 100
+    pub gm: i8,
 
     // HSI Controls
     pub hue: u16,
     pub sat: u8,
-    // pub int: u8, // Unified with dim
+
     pub list_cursor: usize,
 }
 

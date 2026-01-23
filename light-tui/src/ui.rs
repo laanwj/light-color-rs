@@ -262,6 +262,31 @@ fn draw_slider(
     render_gradient_ribbon(f, ribbon_area, target, min, max);
 }
 
+fn compute_ribbon_gradient(target: ControlTarget, value: i16) -> Color {
+    match target {
+        ControlTarget::Hue => {
+            let (r, g, b) = color::hsi_to_rgb(value as u16, 100, 100);
+            Color::Rgb(r, g, b)
+        }
+        ControlTarget::CT => {
+            let (r, g, b) = color::kelvin_to_rgb(value as u16);
+            Color::Rgb(r, g, b)
+        }
+        ControlTarget::GM => {
+            let (r, g, b) = color::apply_gm((255, 255, 255), value);
+            Color::Rgb(r, g, b)
+        }
+        ControlTarget::Sat => {
+            let (r, g, b) = color::hsi_to_rgb(0, value as u16, 50); // Show saturation effect on red?
+            Color::Rgb(r, g, b)
+        }
+        ControlTarget::Int | ControlTarget::Dim => {
+            let v = (value as f32 / 100.0 * 255.0) as u8;
+            Color::Rgb(v, v, v)
+        }
+    }
+}
+
 fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min: i16, max: i16) {
     if area.width < 1 {
         return;
@@ -271,30 +296,8 @@ fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min:
     for x in 0..area.width {
         // Map x to value
         let pct = x as f32 / (area.width - 1) as f32;
-        let value = (min as f32 + (max as f32 - min as f32) * pct) as i32;
-
-        let color = match target {
-            ControlTarget::Hue => {
-                let (r, g, b) = color::hsi_to_rgb(value as u16, 100, 100);
-                Color::Rgb(r, g, b)
-            }
-            ControlTarget::CT => {
-                let (r, g, b) = color::kelvin_to_rgb(value as u16);
-                Color::Rgb(r, g, b)
-            }
-            ControlTarget::GM => {
-                let (r, g, b) = color::apply_gm((255, 255, 255), value as i16);
-                Color::Rgb(r, g, b)
-            }
-            ControlTarget::Sat => {
-                let (r, g, b) = color::hsi_to_rgb(0, value as u16, 50); // Show saturation effect on red?
-                Color::Rgb(r, g, b)
-            }
-            ControlTarget::Int | ControlTarget::Dim => {
-                let v = (value as f32 / 100.0 * 255.0) as u8;
-                Color::Rgb(v, v, v)
-            }
-        };
+        let value = (min as f32 + (max as f32 - min as f32) * pct) as i16;
+        let color = compute_ribbon_gradient(target, value);
 
         spans.push(Span::styled(" ", Style::default().bg(color)));
     }

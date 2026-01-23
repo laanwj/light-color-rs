@@ -270,7 +270,7 @@ fn render_gradient_ribbon(f: &mut Frame, area: Rect, target: ControlTarget, min:
     let mut spans = Vec::new();
     for x in 0..area.width {
         // Map x to value
-        let pct = x as f32 / area.width as f32;
+        let pct = x as f32 / (area.width - 1) as f32;
         let value = (min as f32 + (max as f32 - min as f32) * pct) as i32;
 
         let color = match target {

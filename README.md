@@ -86,7 +86,7 @@ You need to enable SPI in `/boot/firmware/config.txt`. That can be done using th
 
 The server component, `light-server` serves a JSONL protocol on a TCP port to allow client software to change the light colors.
 
-It is configured using `config.json`, a JSON configuration file in the current directory:
+It is configured using a JSON configuration file specified with the `--config-file` argument:
 
 ```json
 {

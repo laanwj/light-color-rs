@@ -1,6 +1,8 @@
+use clap::Parser;
 use log::{debug, info, trace, warn};
 use std::error::Error;
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
@@ -10,6 +12,14 @@ use light_protocol::{Command, ModeType, Response, ResponseType, State};
 
 mod configuration;
 mod nanlite;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Path to configuration file
+    #[arg(short, long, required=true)]
+    config_file: PathBuf,
+}
 
 /** Update state record from another state record.
  * Data items that are the unset, will stay the same.
@@ -183,15 +193,17 @@ async fn connection_task(
     info!("Thread {} finishing", peer.to_string());
 }
 
-fn read_config() -> Result<configuration::Configuration, Box<dyn Error>> {
-    let config_data = fs::read_to_string("config.json")?;
+fn read_config(config_file: &Path) -> Result<configuration::Configuration, Box<dyn Error>> {
+    let config_data = fs::read_to_string(config_file)?;
     Ok(serde_json::from_str(&config_data)?)
 }
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    let config = read_config();
+    let cli = Cli::parse();
+
+    let config = read_config(&cli.config_file);
     if let Err(err) = config {
         eprintln!("Error loading configuration: {}", err);
         return;

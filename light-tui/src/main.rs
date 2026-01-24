@@ -11,7 +11,6 @@ use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
-use tokio::time::interval;
 
 mod app;
 mod color;
@@ -105,17 +104,12 @@ async fn run_app<B: ratatui::backend::Backend>(
 where
     <B as ratatui::backend::Backend>::Error: Send + Sync + 'static,
 {
-    let mut tick_rate = interval(Duration::from_millis(100));
-
     let mut event_stream = EventStream::new();
 
     loop {
         terminal.draw(|f| ui::draw(f, app))?;
 
         tokio::select! {
-            _ = tick_rate.tick() => {
-                 // Regular tick
-            }
             Some(states) = rx_update.recv() => {
                 app.lights = states;
                 if app.first_connect {

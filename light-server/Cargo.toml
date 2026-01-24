@@ -10,3 +10,5 @@ serde_json = { version = "1.0" }
 rf24-rs = { version = "0.3.1" , features = ["std"]}
 linux-embedded-hal = { version = "0.4.0", features = ["spi", "gpio-cdev"]}
 light-protocol = { version = "0.1.0", path = "../light-protocol" }
+env_logger = "0.11.8"
+log = "0.4.29"

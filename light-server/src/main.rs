@@ -1,3 +1,4 @@
+use log::{debug, info, trace, warn};
 use std::error::Error;
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -96,10 +97,10 @@ async fn lights_task(
     config: &configuration::Hardware,
     mut rx: mpsc::Receiver<(u16, LightCommand)>,
 ) {
-    println!("Light thread running");
+    info!("Light thread running");
     let mut rf24 = nanlite::rf24_init(config.device.clone(), config.nrf24_ce_gpio).unwrap();
     while let Some((idx, cmd)) = rx.recv().await {
-        println!("GOT = {:?}", (idx, cmd));
+        debug!("GOT = {:?}", (idx, cmd));
         match cmd {
             LightCommand::CCT(intensity, cct, gm) => {
                 nanlite::set_intensity_cct_gm(&mut rf24, idx, intensity, cct, gm).unwrap();
@@ -120,7 +121,7 @@ async fn connection_task(
     mut stream: tokio::net::TcpStream,
     peer: std::net::SocketAddr,
 ) {
-    println!("Thread {} starting", peer.to_string());
+    info!("Thread {} starting", peer.to_string());
     let (reader, mut writer) = stream.split();
     let mut buf_reader = BufReader::new(reader);
 
@@ -138,13 +139,13 @@ async fn connection_task(
         match buf_reader.read_until(b'\n', &mut buf).await {
             Ok(n) => {
                 if n == 0 {
-                    println!("EOF received");
+                    debug!("EOF received");
                     break;
                 }
                 let buf_string = String::from_utf8_lossy(&buf);
-                //println!("Received line: {:?}", buf_string);
+                trace!("Received line: {:?}", buf_string);
                 let command: Command = serde_json::from_str(&buf_string).unwrap();
-                println!("Received message: {:?}", command);
+                debug!("Received message: {:?}", command);
                 let update_command = {
                     let mut light_states_mut = light_states.lock().unwrap();
                     update_state(&mut light_states_mut[command.idx as usize], &command.state);
@@ -152,7 +153,7 @@ async fn connection_task(
                 };
 
                 // Send command to light thread.
-                println!("Out: {:?}", update_command);
+                debug!("Out: {:?}", update_command);
                 if let Some(light_cmd) = update_command {
                     tx.send((light_config[command.idx as usize].address, light_cmd))
                         .await
@@ -173,13 +174,13 @@ async fn connection_task(
                 buf.clear();
             }
             Err(e) => {
-                println!("Error receiving message: {}", e);
+                warn!("Error receiving message: {}", e);
                 break;
             }
         }
     }
 
-    println!("Thread {} finishing", peer.to_string());
+    info!("Thread {} finishing", peer.to_string());
 }
 
 fn read_config() -> Result<configuration::Configuration, Box<dyn Error>> {
@@ -189,6 +190,7 @@ fn read_config() -> Result<configuration::Configuration, Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let config = read_config();
     if let Err(err) = config {
         eprintln!("Error loading configuration: {}", err);
@@ -199,7 +201,7 @@ async fn main() {
     let addr = config.network.bind_addr.clone();
     let socket = TcpListener::bind(&addr).await.unwrap();
 
-    println!("Listening on {}", addr);
+    info!("Listening on {}", addr);
 
     // Initial light states (unknown).
     let num_lights = config.lights.len();
@@ -227,7 +229,7 @@ async fn main() {
         let light_states = light_states.clone();
         let tx = tx.clone();
         let light_config = config.lights.clone();
-        println!("Incoming connection from: {}", peer.to_string());
+        info!("Incoming connection from: {}", peer.to_string());
         tokio::spawn(async move {
             connection_task(&light_config, light_states, tx, stream, peer).await;
         });

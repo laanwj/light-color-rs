@@ -5,3 +5,10 @@ members = [
     "light-tui",
 ]
 resolver = "2"
+
+[workspace.dependencies]
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tokio = { version = "1.49.0", features = ["full"] }
+light-protocol = { path = "light-protocol" }

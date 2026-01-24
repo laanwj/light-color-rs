@@ -195,7 +195,7 @@ impl App {
         }
     }
 
-    fn sync_controls_with_cursor(&mut self) {
+    pub fn sync_controls_with_cursor(&mut self) {
         if self.list_cursor < self.lights.len() {
             let light = &self.lights[self.list_cursor];
             // Sync values

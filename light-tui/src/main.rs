@@ -122,6 +122,7 @@ where
                     app.first_connect = false;
                     // Select all lights on first succesful connect.
                     app.selected_indices = HashSet::from_iter(0..app.lights.len());
+                    app.sync_controls_with_cursor();
                 }
             }
             Some(Ok(event)) = event_stream.next() => {

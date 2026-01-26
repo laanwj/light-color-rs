@@ -108,7 +108,9 @@ where
 
     loop {
         let mut mouse_areas = MouseAreas::new();
-        terminal.draw(|f| { mouse_areas = ui::draw(f, app); } )?;
+        terminal.draw(|f| {
+            mouse_areas = ui::draw(f, app);
+        })?;
 
         tokio::select! {
             Some(states) = rx_update.recv() => {

@@ -68,7 +68,9 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut Mouse
             app.theme.normal_item
         };
         items.push(ListItem::new(content).style(style));
-        mouse_areas.lights.push((i, Rect::new(area.x, area.y + 1 + i as u16, area.width, 1)));
+        mouse_areas
+            .lights
+            .push((i, Rect::new(area.x, area.y + 1 + i as u16, area.width, 1)));
     }
 
     let block = Block::default()
@@ -104,8 +106,14 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut MouseAr
 
     f.render_widget(tabs, chunks[0]);
     // Mouse areas (TODO is there a more precise way?)
-    mouse_areas.modes.push((ModeType::CCT, Rect::new(chunks[0].x + 2, chunks[0].y + 1, 3, 1)));
-    mouse_areas.modes.push((ModeType::HSI, Rect::new(chunks[0].x + 8, chunks[0].y + 1, 3, 1)));
+    mouse_areas.modes.push((
+        ModeType::CCT,
+        Rect::new(chunks[0].x + 2, chunks[0].y + 1, 3, 1),
+    ));
+    mouse_areas.modes.push((
+        ModeType::HSI,
+        Rect::new(chunks[0].x + 8, chunks[0].y + 1, 3, 1),
+    ));
 
     // Control Sliders
     let controls_area = chunks[1];

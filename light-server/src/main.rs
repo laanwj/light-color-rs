@@ -17,7 +17,7 @@ mod nanlite;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     /// Path to configuration file
-    #[arg(short, long, required=true)]
+    #[arg(short, long, required = true)]
     config_file: PathBuf,
 }
 

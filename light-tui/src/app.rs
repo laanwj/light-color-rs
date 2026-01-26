@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 use light_protocol::{ModeType, State};
 use ratatui::layout::{Position, Rect};
-use ratatui::style::{Color, Modifier,  Style};
+use ratatui::style::{Color, Modifier, Style};
 use std::collections::HashSet;
 
 pub struct Theme {
@@ -163,19 +163,32 @@ impl App {
                 }
             }
         }
-        if mouse.kind == MouseEventKind::Down(MouseButton::Left) || mouse.kind == MouseEventKind::Drag(MouseButton::Left) {
+        if mouse.kind == MouseEventKind::Down(MouseButton::Left)
+            || mouse.kind == MouseEventKind::Drag(MouseButton::Left)
+        {
             for (target, area) in &mouse_areas.sliders {
                 if area.contains(pos) {
                     self.focus = Focus::Control(*target);
                     let (min, max) = target.range();
-                    let val = min + (pos.x as i32 - area.x as i32) * (max - min) / (area.width as i32 - 1);
+                    let val = min
+                        + (pos.x as i32 - area.x as i32) * (max - min) / (area.width as i32 - 1);
                     match target {
-                        ControlTarget::Dim => { self.dim = val as u8 }
-                        ControlTarget::CT => { self.ct = val as u16; }
-                        ControlTarget::GM => { self.gm = val as i8; }
-                        ControlTarget::Hue => { self.hue = val as u16; }
-                        ControlTarget::Sat => { self.sat = val as u8; }
-                        ControlTarget::Int => { self.dim = val as u8; }
+                        ControlTarget::Dim => self.dim = val as u8,
+                        ControlTarget::CT => {
+                            self.ct = val as u16;
+                        }
+                        ControlTarget::GM => {
+                            self.gm = val as i8;
+                        }
+                        ControlTarget::Hue => {
+                            self.hue = val as u16;
+                        }
+                        ControlTarget::Sat => {
+                            self.sat = val as u8;
+                        }
+                        ControlTarget::Int => {
+                            self.dim = val as u8;
+                        }
                     }
                 }
             }
@@ -307,9 +320,7 @@ impl App {
                         };
                         self.ct = (self.ct as i32 + step).clamp(min, max) as u16;
                     }
-                    ControlTarget::GM => {
-                        self.gm = (self.gm as i32 + delta).clamp(min, max) as i8
-                    }
+                    ControlTarget::GM => self.gm = (self.gm as i32 + delta).clamp(min, max) as i8,
                     ControlTarget::Hue => {
                         self.hue = (self.hue as i32 + delta).clamp(min, max) as u16
                     }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::{
-    execute,
     event::{DisableMouseCapture, EnableMouseCapture},
+    execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};

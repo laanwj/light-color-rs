@@ -1,4 +1,4 @@
-use crate::app::{App, ControlTarget, Focus, InputMode};
+use crate::app::{App, ControlTarget, Focus, InputMode, MouseAreas};
 use crate::color;
 use light_protocol::ModeType;
 use ratatui::{
@@ -9,7 +9,8 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Gauge, List, ListItem, Paragraph, Tabs},
 };
 
-pub fn draw(f: &mut Frame, app: &App) {
+pub fn draw(f: &mut Frame, app: &App) -> MouseAreas {
+    let mut mouse_areas = MouseAreas::new();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
@@ -35,13 +36,15 @@ pub fn draw(f: &mut Frame, app: &App) {
         .split(chunks[1]);
 
     // Left: Light List
-    draw_light_list(f, app, main_chunks[0]);
+    draw_light_list(f, app, main_chunks[0], &mut mouse_areas);
 
     // Right: Controls
-    draw_controls(f, app, main_chunks[1]);
+    draw_controls(f, app, main_chunks[1], &mut mouse_areas);
+
+    mouse_areas
 }
 
-fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
+fn draw_light_list(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut MouseAreas) {
     let mut items: Vec<ListItem> = Vec::new();
     for (i, light) in app.lights.iter().enumerate() {
         let is_selected = app.selected_indices.contains(&i);
@@ -65,6 +68,7 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
             app.theme.normal_item
         };
         items.push(ListItem::new(content).style(style));
+        mouse_areas.lights.push((i, Rect::new(area.x, area.y + 1 + i as u16, area.width, 1)));
     }
 
     let block = Block::default()
@@ -80,7 +84,7 @@ fn draw_light_list(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(list, area);
 }
 
-fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
+fn draw_controls(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut MouseAreas) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
@@ -99,17 +103,20 @@ fn draw_controls(f: &mut Frame, app: &App, area: Rect) {
         .divider("|");
 
     f.render_widget(tabs, chunks[0]);
+    // Mouse areas (TODO is there a more precise way?)
+    mouse_areas.modes.push((ModeType::CCT, Rect::new(chunks[0].x + 2, chunks[0].y + 1, 3, 1)));
+    mouse_areas.modes.push((ModeType::HSI, Rect::new(chunks[0].x + 8, chunks[0].y + 1, 3, 1)));
 
     // Control Sliders
     let controls_area = chunks[1];
 
     match app.current_mode {
-        ModeType::CCT => draw_cct_controls(f, app, controls_area),
-        ModeType::HSI => draw_hsi_controls(f, app, controls_area),
+        ModeType::CCT => draw_cct_controls(f, app, controls_area, mouse_areas),
+        ModeType::HSI => draw_hsi_controls(f, app, controls_area, mouse_areas),
     }
 }
 
-fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
+fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut MouseAreas) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -131,6 +138,7 @@ fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
         0,
         100,
         ControlTarget::Dim,
+        mouse_areas,
     );
     draw_slider(
         f,
@@ -141,6 +149,7 @@ fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
         2700,
         7500,
         ControlTarget::CT,
+        mouse_areas,
     );
     draw_slider(
         f,
@@ -151,10 +160,11 @@ fn draw_cct_controls(f: &mut Frame, app: &App, area: Rect) {
         -100,
         100,
         ControlTarget::GM,
+        mouse_areas,
     );
 }
 
-fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
+fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect, mouse_areas: &mut MouseAreas) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -176,6 +186,7 @@ fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
         0,
         360,
         ControlTarget::Hue,
+        mouse_areas,
     );
     draw_slider(
         f,
@@ -186,6 +197,7 @@ fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
         0,
         100,
         ControlTarget::Sat,
+        mouse_areas,
     );
     draw_slider(
         f,
@@ -196,6 +208,7 @@ fn draw_hsi_controls(f: &mut Frame, app: &App, area: Rect) {
         0,
         100,
         ControlTarget::Int,
+        mouse_areas,
     );
 }
 
@@ -208,6 +221,7 @@ fn draw_slider(
     min: i16,
     max: i16,
     target: ControlTarget,
+    mouse_areas: &mut MouseAreas,
 ) {
     let is_focused = if let Focus::Control(t) = app.focus {
         t == target
@@ -251,6 +265,7 @@ fn draw_slider(
         width: area.width,
     };
     f.render_widget(gauge, gauge_area);
+    mouse_areas.sliders.push((target, gauge_area));
 
     // Render the gradient ribbon on top
     let ribbon_area = Rect {

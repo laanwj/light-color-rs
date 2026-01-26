@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, MouseAreas};
 use anyhow::Result;
 use clap::Parser;
 use crossterm::event::{self as crossterm_event, Event, EventStream, KeyCode, KeyModifiers};
@@ -107,7 +107,8 @@ where
     let mut event_stream = EventStream::new();
 
     loop {
-        terminal.draw(|f| ui::draw(f, app))?;
+        let mut mouse_areas = MouseAreas::new();
+        terminal.draw(|f| { mouse_areas = ui::draw(f, app); } )?;
 
         tokio::select! {
             Some(states) = rx_update.recv() => {
@@ -120,33 +121,38 @@ where
                 }
             }
             Some(Ok(event)) = event_stream.next() => {
-                 if let Event::Key(key) = event {
-                    if key.kind == crossterm_event::KeyEventKind::Press {
-                        match key.code {
-                            KeyCode::Char('q') => return Ok(()),
-                            KeyCode::Char('c') => {
-                                if key.modifiers.contains(KeyModifiers::CONTROL) {
-                                    return Ok(());
-                                }
-                            },
-                            _ => {
-                                let old_states = app.lights.clone();
-                                app.handle_key_event(key);
-
-                                for idx in &app.selected_indices {
-                                    if *idx < app.lights.len() && *idx < old_states.len() {
-                                        let new_state = &app.lights[*idx];
-                                        let cmd = Command {
-                                            idx: *idx as u16,
-                                            state: new_state.clone(),
-                                        };
-                                        let _ = tx_cmd.send(cmd).await;
+                let old_states = app.lights.clone();
+                match event {
+                    Event::Key(key) => {
+                        if key.kind == crossterm_event::KeyEventKind::Press {
+                            match key.code {
+                                KeyCode::Char('q') => return Ok(()),
+                                KeyCode::Char('c') => {
+                                    if key.modifiers.contains(KeyModifiers::CONTROL) {
+                                        return Ok(());
                                     }
+                                },
+                                _ => {
+                                    app.handle_key_event(key);
                                 }
                             }
                         }
+                    },
+                    Event::Mouse(mouse) => {
+                        app.handle_mouse_event(&mouse_areas, mouse);
+                    },
+                    _ => {}
+                }
+                for idx in &app.selected_indices {
+                    if *idx < app.lights.len() && *idx < old_states.len() && app.lights[*idx] != old_states[*idx] {
+                        let new_state = &app.lights[*idx];
+                        let cmd = Command {
+                            idx: *idx as u16,
+                            state: new_state.clone(),
+                        };
+                        let _ = tx_cmd.send(cmd).await;
                     }
-                 }
+                }
             }
         }
     }

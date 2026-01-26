@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
  *   {"response":"state", "state": {...}}
  */
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum ModeType {
     #[serde(rename = "cct")]
     CCT,
@@ -17,7 +17,7 @@ pub enum ModeType {
     HSI,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum ResponseType {
     #[serde(rename = "err")]
     Err,
@@ -27,7 +27,7 @@ pub enum ResponseType {
     State,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct State {
     pub mode: Option<ModeType>,
     pub dim: Option<u16>,

@@ -149,37 +149,36 @@ impl App {
 
     pub fn handle_mouse_event(&mut self, mouse_areas: &MouseAreas, mouse: MouseEvent) {
         let pos = Position::new(mouse.column, mouse.row);
-        match mouse.kind {
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left) => {
-                for (index, area) in &mouse_areas.lights {
-                    if area.contains(pos) {
-                        self.list_cursor = *index;
-                        self.focus = Focus::LightList;
-                        self.toggle_selection();
-                    }
+        if mouse.kind == MouseEventKind::Down(MouseButton::Left) {
+            for (index, area) in &mouse_areas.lights {
+                if area.contains(pos) {
+                    self.list_cursor = *index;
+                    self.focus = Focus::LightList;
+                    self.toggle_selection();
                 }
-                for (mode, area) in &mouse_areas.modes {
-                    if area.contains(pos) {
-                        self.current_mode = *mode;
-                    }
+            }
+            for (mode, area) in &mouse_areas.modes {
+                if area.contains(pos) {
+                    self.current_mode = *mode;
                 }
-                for (target, area) in &mouse_areas.sliders {
-                    if area.contains(pos) {
-                        self.focus = Focus::Control(*target);
-                        let (min, max) = target.range();
-                        let val = min + (pos.x as i32 - area.x as i32) * (max - min) / (area.width as i32 - 1);
-                        match target {
-                            ControlTarget::Dim => { self.dim = val as u8 }
-                            ControlTarget::CT => { self.ct = val as u16; }
-                            ControlTarget::GM => { self.gm = val as i8; }
-                            ControlTarget::Hue => { self.hue = val as u16; }
-                            ControlTarget::Sat => { self.sat = val as u8; }
-                            ControlTarget::Int => { self.dim = val as u8; }
-                        }
+            }
+        }
+        if mouse.kind == MouseEventKind::Down(MouseButton::Left) || mouse.kind == MouseEventKind::Drag(MouseButton::Left) {
+            for (target, area) in &mouse_areas.sliders {
+                if area.contains(pos) {
+                    self.focus = Focus::Control(*target);
+                    let (min, max) = target.range();
+                    let val = min + (pos.x as i32 - area.x as i32) * (max - min) / (area.width as i32 - 1);
+                    match target {
+                        ControlTarget::Dim => { self.dim = val as u8 }
+                        ControlTarget::CT => { self.ct = val as u16; }
+                        ControlTarget::GM => { self.gm = val as i8; }
+                        ControlTarget::Hue => { self.hue = val as u16; }
+                        ControlTarget::Sat => { self.sat = val as u8; }
+                        ControlTarget::Int => { self.dim = val as u8; }
                     }
                 }
             }
-            _ => {}
         }
         self.update_selected_lights();
     }

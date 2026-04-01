@@ -29,6 +29,8 @@ pub enum ResponseType {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct State {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub on: Option<bool>,
     pub mode: Option<ModeType>,
     pub dim: Option<u16>,
     pub ct: Option<u16>,

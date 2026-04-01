@@ -110,6 +110,86 @@ It is configured using a JSON configuration file specified with the `--config-fi
   - `device`: SPI device node to use.
   - `nrf24_ce_gpio`: GPIO pin used for nRF24 Chip Enable.
 - `lights`: Array of lights, with their address as configured on the Nanlite device.
+  - `name` (optional): Display name for the light, used in MQTT discovery.
+
+## MQTT / Home Assistant integration
+
+The server can optionally connect to an MQTT broker and expose lights to
+Home Assistant via [MQTT Discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery).
+Each light automatically appears as a light entity in HA with brightness,
+color temperature, and HS color support.
+
+### MQTT broker setup
+
+You need an MQTT broker on your network. [Mosquitto](https://mosquitto.org/)
+is the most common choice:
+
+```bash
+# Using Podman/Docker:
+podman run -d --name mosquitto --network=host eclipse-mosquitto:2
+
+# Or install natively:
+apt install mosquitto
+```
+
+### Configuration
+
+Add an `mqtt` section to the server config file:
+
+```json
+{
+    "network": {
+        "bind_addr": "0.0.0.0:4983"
+    },
+    "hardware": {
+        "device": "/dev/spidev0.0",
+        "nrf24_ce_gpio": 25
+    },
+    "lights": [
+        { "address": 1, "name": "Key Light" },
+        { "address": 2, "name": "Fill Light" }
+    ],
+    "mqtt": {
+        "broker_addr": "192.168.1.100:1883",
+        "topic_prefix": "nanlite"
+    }
+}
+```
+
+- `mqtt`
+  - `broker_addr`: MQTT broker address in `host:port` format.
+  - `username` / `password` (optional): Broker credentials.
+  - `topic_prefix` (default `"nanlite"`): Prefix for all MQTT topics.
+
+The `mqtt` section is optional. If omitted, the server runs without MQTT
+(TCP-only, as before).
+
+### Home Assistant setup
+
+1. Install the [MQTT integration](https://www.home-assistant.io/integrations/mqtt/)
+   in HA if not already present (**Settings > Devices & Services > Add Integration > MQTT**).
+2. Point it at your MQTT broker.
+3. Start `light-server` with the MQTT config. The lights will auto-discover
+   in HA within a few seconds.
+
+The lights appear under **Settings > Devices & Services > MQTT** and support:
+
+- On/Off (mapped to brightness 0/100)
+- Brightness (0-100)
+- Color temperature (2700K-7500K, shown in mireds in HA)
+- HS color mode (hue 0-360, saturation 0-100)
+
+State changes from the TUI or Godot client are reflected in HA, and vice versa.
+
+### MQTT topics
+
+For a light at index `0` with topic prefix `nanlite`:
+
+| Topic                                        | Direction       | Purpose                         |
+| :------------------------------------------- | :-------------- | :------------------------------ |
+| `homeassistant/light/nanlite_light_0/config` | server → broker | HA discovery payload (retained) |
+| `nanlite/light/0/state`                      | server → broker | Current light state (retained)  |
+| `nanlite/light/0/set`                        | broker → server | Commands from HA                |
 
 ## TUI client
 

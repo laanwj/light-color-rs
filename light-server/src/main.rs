@@ -6,11 +6,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 
 use light_protocol::{Command, ModeType, Response, ResponseType, State};
 
 mod configuration;
+mod mqtt;
 mod nanlite;
 
 #[derive(Parser, Debug)]
@@ -25,6 +26,9 @@ struct Cli {
  * Data items that are the unset, will stay the same.
  */
 fn update_state(dest_state: &mut State, src_state: &State) {
+    if let Some(on) = src_state.on {
+        dest_state.on = Some(on);
+    }
     if let Some(mode) = src_state.mode {
         dest_state.mode = Some(mode);
     }
@@ -49,46 +53,36 @@ fn update_state(dest_state: &mut State, src_state: &State) {
  * Validate and convert values to nanlite values.
  */
 fn update_light(state: &State) -> Option<LightCommand> {
+    let light_on = state.on.unwrap_or(true);
+
     match state.mode {
         Some(ModeType::CCT) => {
-            if let (Some(dim), Some(ct), Some(gm)) = (state.dim, state.ct, state.gm) {
-                // ct is mapped from 2700K..7500K
-                let ct_val: u8 = if ct < 2700 {
-                    0
-                } else if ct > 7500 {
-                    100
-                } else {
-                    (((ct as u32) - 2700) * 100 / (7500 - 2700)) as u8
-                };
-                // gm is mapped from -100..100 to 0..100
-                let gm_val: u8 = if gm < -100 {
-                    0
-                } else if gm > 100 {
-                    100
-                } else {
-                    (((gm as i32) + 100) / 2) as u8
-                };
-                // Check range for dim 0..100
-                let dim_val: u8 = if dim > 100 { 100 } else { dim as u8 };
-
-                Some(LightCommand::CCT(dim_val, ct_val, gm_val))
+            let dim = state.dim.unwrap_or(0);
+            let ct = state.ct?;
+            let gm = state.gm?;
+            // ct is mapped from 2700K..7500K
+            let ct_val: u8 = if ct < 2700 {
+                0
+            } else if ct > 7500 {
+                100
             } else {
-                None
-            }
+                (((ct as u32) - 2700) * 100 / (7500 - 2700)) as u8
+            };
+            // gm is mapped from -100..100 to 0..100
+            let gm_val: u8 = (((gm.clamp(-100, 100) as i32) + 100) / 2) as u8;
+            let dim_val: u8 = if light_on { dim.min(100) as u8 } else { 0 };
+
+            Some(LightCommand::CCT(dim_val, ct_val, gm_val))
         }
         Some(ModeType::HSI) => {
-            if let (Some(hue), Some(sat), Some(dim)) = (state.hue, state.sat, state.dim) {
-                // Check range for hue 0..360
-                let hue_val: u16 = if hue > 360 { 360 } else { hue };
-                // Check range for sat 0..100
-                let sat_val: u8 = if sat > 100 { 100 } else { sat as u8 };
-                // Check range for dim 0..100
-                let dim_val: u8 = if dim > 100 { 100 } else { dim as u8 };
+            let dim = state.dim.unwrap_or(0);
+            let hue = state.hue?;
+            let sat = state.sat?;
+            let hue_val: u16 = hue.min(360);
+            let sat_val: u8 = sat.min(100) as u8;
+            let dim_val: u8 = if light_on { dim.min(100) as u8 } else { 0 };
 
-                Some(LightCommand::HSI(hue_val, sat_val, dim_val))
-            } else {
-                None
-            }
+            Some(LightCommand::HSI(hue_val, sat_val, dim_val))
         }
         None => None,
     }
@@ -128,6 +122,7 @@ async fn connection_task(
     light_config: &Vec<configuration::Light>,
     light_states: Arc<Mutex<Vec<State>>>,
     tx: mpsc::Sender<(u16, LightCommand)>,
+    state_broadcast: broadcast::Sender<(usize, State)>,
     mut stream: tokio::net::TcpStream,
     peer: std::net::SocketAddr,
 ) {
@@ -159,7 +154,12 @@ async fn connection_task(
                 let update_command = {
                     let mut light_states_mut = light_states.lock().unwrap();
                     update_state(&mut light_states_mut[command.idx as usize], &command.state);
-                    update_light(&light_states_mut[command.idx as usize])
+                    let cmd = update_light(&light_states_mut[command.idx as usize]);
+                    let _ = state_broadcast.send((
+                        command.idx as usize,
+                        light_states_mut[command.idx as usize].clone(),
+                    ));
+                    cmd
                 };
 
                 // Send command to light thread.
@@ -219,6 +219,7 @@ async fn main() {
     let num_lights = config.lights.len();
     let initial_states: Vec<State> = vec![
         State {
+            on: None,
             mode: None,
             dim: None,
             ct: None,
@@ -233,17 +234,48 @@ async fn main() {
     // Make channel for communicating with lights thread.
     let (tx, rx) = mpsc::channel::<(u16, LightCommand)>(32);
 
+    // Broadcast channel for state updates (notifies MQTT task of TCP-originated changes).
+    let (state_broadcast, _) = broadcast::channel::<(usize, State)>(64);
+
     // Spawn lights thread.
     let hardware_config = config.hardware.clone();
     tokio::spawn(async move { lights_task(&hardware_config, rx).await });
 
+    // Spawn MQTT task if configured.
+    if let Some(ref mqtt_config) = config.mqtt {
+        let mqtt_config = mqtt_config.clone();
+        let light_config = config.lights.clone();
+        let light_states = light_states.clone();
+        let light_tx = tx.clone();
+        let state_rx = state_broadcast.subscribe();
+        tokio::spawn(async move {
+            mqtt::mqtt_task(
+                &mqtt_config,
+                &light_config,
+                light_states,
+                light_tx,
+                state_rx,
+            )
+            .await;
+        });
+    }
+
     while let Ok((stream, peer)) = socket.accept().await {
         let light_states = light_states.clone();
         let tx = tx.clone();
+        let state_broadcast = state_broadcast.clone();
         let light_config = config.lights.clone();
         info!("Incoming connection from: {}", peer.to_string());
         tokio::spawn(async move {
-            connection_task(&light_config, light_states, tx, stream, peer).await;
+            connection_task(
+                &light_config,
+                light_states,
+                tx,
+                state_broadcast,
+                stream,
+                peer,
+            )
+            .await;
         });
     }
 }
